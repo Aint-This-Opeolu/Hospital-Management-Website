@@ -1,0 +1,4 @@
+node_modules/
+Hospital-website/node_modules/
+*.sqlite
+.env
