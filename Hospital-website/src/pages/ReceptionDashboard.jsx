@@ -14,7 +14,7 @@ export default function ReceptionDashboard({ user }) {
   const [patients, setPatients] = React.useState([]);
   const [isModalOpen, setIsModalOpen] = React.useState(false);
   const [message, setMessage] = React.useState('');
-  const [registration, setRegistration] = React.useState({ name: '', email: '', phone: '', date_of_birth: '', gender: '', contact_address: '', next_of_kin: '', next_of_kin_phone: '', blood_group: '', known_allergies: '' });
+  const [registration, setRegistration] = React.useState({ name: '', email: '', phone: '', date_of_birth: '', gender: '', contact_address: '', next_of_kin: '', next_of_kin_phone: '', blood_group: '', known_allergies: '', temporary_password: '' });
 
   async function load() {
     const [appointmentData, patientData] = await Promise.all([api('/api/appointments'), api('/api/clinical/patients')]);
@@ -27,9 +27,9 @@ export default function ReceptionDashboard({ user }) {
   async function register(event) {
     event.preventDefault();
     try {
-      await api('/api/clinical/patients', { method: 'POST', body: JSON.stringify(registration) });
-      setMessage('Patient registered successfully.');
-      setRegistration({ name: '', email: '', phone: '', date_of_birth: '', gender: '', contact_address: '', next_of_kin: '', next_of_kin_phone: '', blood_group: '', known_allergies: '' });
+      const result = await api('/api/clinical/patients', { method: 'POST', body: JSON.stringify(registration) });
+      setMessage(`Patient registered. Temporary login password: ${result.temporaryPassword}`);
+      setRegistration({ name: '', email: '', phone: '', date_of_birth: '', gender: '', contact_address: '', next_of_kin: '', next_of_kin_phone: '', blood_group: '', known_allergies: '', temporary_password: '' });
       setIsModalOpen(false);
       load();
     } catch (error) { setMessage(error.message); }
