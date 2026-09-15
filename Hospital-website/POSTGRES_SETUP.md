@@ -22,6 +22,15 @@ npm run server
 npm run dev
 ```
 
+## Vercel deployment
+
+Import the GitHub repository into Vercel and set the project Root Directory to `Hospital-website`. Add these Vercel environment variables for Production and Preview:
+
+- `DATABASE_URL`: your hosted PostgreSQL connection string
+- `HMS_SECRET`: a long random JWT secret
+
+Vercel will use `vercel.json` to build the Vite frontend and route `/api/*` to the Express/Prisma serverless function. Run `npm run db:push` and `npm run db:seed` against the hosted database before signing in.
+
 The active backend uses Prisma/PostgreSQL only. The previous SQLite files are no longer loaded by the server. Existing SQLite data requires a deliberate one-time data migration after the target PostgreSQL database credentials are supplied; the Prisma schema and seed data are ready for that migration.
 
 Seed accounts:

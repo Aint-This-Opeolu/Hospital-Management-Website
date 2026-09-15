@@ -17,4 +17,9 @@ app.use('/api/static', express.static(path.join(__dirname, 'public')));
 app.use((error, req, res, next) => { console.error(error); res.status(500).json({ error: 'Internal server error' }); });
 
 const PORT = process.env.PORT || 4000;
-migrate().then(() => app.listen(PORT, () => console.log(`Kenny Care API running on http://localhost:${PORT}`))).catch((error) => { console.error('Database connection failed:', error.message); process.exit(1); });
+
+if (require.main === module) {
+	migrate().then(() => app.listen(PORT, () => console.log(`Kenny Care API running on http://localhost:${PORT}`))).catch((error) => { console.error('Database connection failed:', error.message); process.exit(1); });
+}
+
+module.exports = app;
