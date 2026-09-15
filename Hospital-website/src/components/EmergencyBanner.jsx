@@ -1,11 +1,20 @@
 import React from 'react';
 import { Phone, AlertCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useLocation } from 'react-router-dom';
 
 export default function EmergencyBanner() {
-  const [isVisible, setIsVisible] = React.useState(true);
+  const location = useLocation();
+  const [isVisible, setIsVisible] = React.useState(() => localStorage.getItem('kenny_care_emergency_banner_dismissed') !== 'true');
 
-  if (!isVisible) return null;
+  const isDashboardRoute = location.pathname === '/dashboard' || ['/admin', '/doctor', '/patient'].includes(location.pathname);
+
+  function dismiss() {
+    localStorage.setItem('kenny_care_emergency_banner_dismissed', 'true');
+    setIsVisible(false);
+  }
+
+  if (!isVisible || isDashboardRoute) return null;
 
   return (
     <AnimatePresence>
@@ -43,7 +52,7 @@ export default function EmergencyBanner() {
 
           {/* Close */}
           <button
-            onClick={() => setIsVisible(false)}
+            onClick={dismiss}
             className="text-white/70 hover:text-white text-lg px-1"
           >
             ×

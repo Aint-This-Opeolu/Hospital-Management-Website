@@ -33,7 +33,7 @@ export default function Hero() {
               <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white leading-tight mb-6">
                 Welcome to <br />
                 <span className="text-blue-500">
-                  Q9 Multy Speciality Hospital
+                  Kenny Care Hospital
                 </span>
               </h1>
 

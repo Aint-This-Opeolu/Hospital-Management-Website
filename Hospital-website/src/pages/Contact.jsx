@@ -37,7 +37,7 @@ export default function Contact() {
           <div className="lg:col-span-1 space-y-6">
             {[
               { icon: Phone, title: 'Primary Call', info: '+2347060671574', sub: '24/7 Availability', color: 'bg-blue-600' },
-              { icon: Phone, title: 'Secondary', info: '+2347060671574', sub: 'Support & Inquiry', color: 'bg-teal-600' },
+              { icon: Phone, title: 'Secondary', info: '09026787124', sub: 'Support & Inquiry', color: 'bg-teal-600' },
               { icon: Mail, title: 'Email Us', info: 'ozobialkenechukwu@gmail.com', sub: 'General Inquiries', color: 'bg-slate-800' },
               { icon: MapPin, title: 'Visit Us', info: 'Nnamdi Azikiwe University, Awka', sub: 'Anambra State, Nigeria', color: 'bg-blue-500' },
             ].map((item, i) => (

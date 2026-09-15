@@ -31,8 +31,8 @@ export default function Gallery() {
             <p className="text-slate-400 text-lg mb-10">
               Experience our hospital through a comprehensive video tour showcasing our patient-first approach.
             </p>
-            <button className="w-20 h-20 bg-blue-600 text-white rounded-full flex items-center justify-center mx-auto hover:bg-blue-700 transition-all shadow-xl shadow-blue-600/40 group">
-              <div className="w-0 h-0 border-t-[10px] border-t-transparent border-l-[18px] border-l-white border-b-[10px] border-b-transparent ml-1 group-hover:scale-110 transition-transform"></div>
+            <button type="button" className="px-6 py-4 bg-amber-400 text-slate-950 rounded-2xl flex items-center justify-center mx-auto font-bold uppercase tracking-wider shadow-xl shadow-amber-400/30 cursor-default">
+              Virtual tour coming soon
             </button>
           </div>
         </div>

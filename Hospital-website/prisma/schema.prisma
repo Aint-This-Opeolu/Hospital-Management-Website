@@ -1,0 +1,133 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           Int           @id @default(autoincrement())
+  name         String
+  email        String        @unique
+  passwordHash String        @map("password_hash")
+  role         String
+  doctorId     String?       @map("doctor_id")
+  phone        String?
+  dateCreated  DateTime      @default(now()) @map("date_created")
+  lastLogin    DateTime?     @map("last_login")
+  active       Boolean       @default(true)
+  observations Observation[]
+  appointments Appointment[] @relation("CreatedAppointments")
+
+  @@index([role, active])
+  @@map("users")
+}
+
+model Doctor {
+  id             String        @id
+  name           String
+  specialization String
+  email          String?       @unique
+  appointments   Appointment[]
+
+  @@map("doctors")
+}
+
+model Patient {
+  id               Int            @id @default(autoincrement())
+  name             String
+  email            String         @unique
+  dateOfBirth      String?        @map("date_of_birth")
+  gender           String?
+  contactAddress   String?        @map("contact_address")
+  phone            String?
+  nextOfKin        String?        @map("next_of_kin")
+  nextOfKinPhone   String?        @map("next_of_kin_phone")
+  bloodGroup       String?        @map("blood_group")
+  knownAllergies   String?        @map("known_allergies")
+  registrationDate DateTime       @default(now()) @map("registration_date")
+  appointments     Appointment[]
+  consultations    Consultation[]
+  investigations   Investigation[]
+  observations     Observation[]
+
+  @@index([name])
+  @@index([phone])
+  @@map("patients")
+}
+
+model Appointment {
+  id                Int          @id @default(autoincrement())
+  patientId         Int?         @map("patient_id")
+  doctorId          String?      @map("doctor_id")
+  patientName       String       @map("patient_name")
+  doctorName        String?      @map("doctor_name")
+  appointmentDate   String       @map("appointment_date")
+  appointmentTime   String       @map("appointment_time")
+  bookingTimestamp  DateTime     @default(now()) @map("booking_timestamp")
+  status            String
+  reason            String?
+  consultationNotes String?      @map("consultation_notes")
+  createdBy         Int?         @map("created_by")
+  patient           Patient?     @relation(fields: [patientId], references: [id])
+  doctor            Doctor?      @relation(fields: [doctorId], references: [id])
+  creator           User?        @relation("CreatedAppointments", fields: [createdBy], references: [id])
+  consultations     Consultation[]
+
+  @@index([doctorId, appointmentDate, appointmentTime])
+  @@index([patientId])
+  @@map("appointments")
+}
+
+model Consultation {
+  id                  Int            @id @default(autoincrement())
+  patientId           Int            @map("patient_id")
+  doctorId            String         @map("doctor_id")
+  appointmentId       Int?           @map("appointment_id")
+  consultationDate    DateTime       @default(now()) @map("consultation_date")
+  presentingComplaint String?        @map("presenting_complaint")
+  clinicalFindings    String?        @map("clinical_findings")
+  diagnosis           String
+  treatmentPrescribed String?        @map("treatment_prescribed")
+  notes               String?
+  patient             Patient        @relation(fields: [patientId], references: [id])
+  appointment         Appointment?   @relation(fields: [appointmentId], references: [id])
+
+  @@index([patientId, consultationDate])
+  @@map("consultations")
+}
+
+model Investigation {
+  id                Int          @id @default(autoincrement())
+  consultationId    Int?         @map("consultation_id")
+  patientId         Int          @map("patient_id")
+  requestedBy       String       @map("requested_by")
+  testType          String       @map("test_type")
+  dateRequested     DateTime     @default(now()) @map("date_requested")
+  resultSummary     String?      @map("result_summary")
+  dateResultEntered DateTime?    @map("date_result_entered")
+  patient           Patient      @relation(fields: [patientId], references: [id])
+
+  @@index([patientId, dateRequested])
+  @@map("investigations")
+}
+
+model Observation {
+  id              Int       @id @default(autoincrement())
+  patientId       Int       @map("patient_id")
+  nurseId         Int       @map("nurse_id")
+  consultationId  Int?      @map("consultation_id")
+  recordedAt      DateTime  @default(now()) @map("recorded_at")
+  temperature     String?
+  bloodPressure   String?   @map("blood_pressure")
+  pulse           String?
+  respiratoryRate String?   @map("respiratory_rate")
+  notes           String?
+  patient         Patient   @relation(fields: [patientId], references: [id])
+  nurse           User      @relation(fields: [nurseId], references: [id])
+
+  @@index([patientId, recordedAt])
+  @@map("observations")
+}

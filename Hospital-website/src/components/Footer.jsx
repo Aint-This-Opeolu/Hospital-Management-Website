@@ -16,7 +16,7 @@ export default function Footer() {
               <div className="bg-white p-1.5 rounded-lg flex items-center justify-center">
                 <img
                   src="https://res.cloudinary.com/dgcyqntse/image/upload/v1773725210/1000572077-removebg-preview_o0stug.png"
-                  alt="Q9 Hospital Logo"
+                  alt="Kenny Care Hospital Logo"
                   className="w-10 h-10 object-contain"
                 />
               </div>
@@ -24,7 +24,7 @@ export default function Footer() {
               {/* Text */}
               <div className="leading-tight">
                 <h2 className="text-lg font-bold text-white tracking-wide">
-                  Q9 MULTY SPECIALITY
+                  KENNY CARE
                 </h2>
                 <p className="text-sm text-blue-500 font-medium">
                   HOSPITAL
@@ -94,7 +94,7 @@ export default function Footer() {
                 <Phone className="h-5 w-5 text-blue-500" />
                 <span>
                   +2347060671574<br />
-                  +2347060671574
+                  09026787124
                 </span>
               </li>
 
@@ -110,7 +110,7 @@ export default function Footer() {
 
         {/* Bottom */}
         <div className="pt-8 border-t border-slate-800 text-center text-sm text-slate-500">
-          <p>© {new Date().getFullYear()} Q9 Multy Speciality Hospital. All rights reserved.</p>
+          <p>© {new Date().getFullYear()} Kenny Care Hospital. All rights reserved.</p>
         </div>
 
       </div>

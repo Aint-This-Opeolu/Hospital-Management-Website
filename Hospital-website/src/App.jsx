@@ -15,9 +15,7 @@ import Gallery from './pages/Gallery';
 import FAQ from './pages/FAQ';
 import Contact from './pages/Contact';
 import Login from './pages/Login';
-import Admin from './pages/Admin';
-import DoctorDashboard from './pages/DoctorDashboard';
-import PatientAppointments from './pages/PatientAppointments';
+import Dashboard from './pages/Dashboard';
 
 export default function App() {
   return (
@@ -37,9 +35,10 @@ export default function App() {
           <Route path="services" element={<Services />} />
           <Route path="appointment" element={<Appointment />} />
           <Route path="login" element={<Login />} />
-          <Route path="admin" element={<Admin />} />
-          <Route path="doctor" element={<DoctorDashboard />} />
-          <Route path="patient" element={<PatientAppointments />} />
+          <Route path="admin" element={<Dashboard />} />
+          <Route path="doctor" element={<Dashboard />} />
+          <Route path="patient" element={<Dashboard />} />
+          <Route path="dashboard" element={<Dashboard />} />
           <Route path="gallery" element={<Gallery />} />
           <Route path="faq" element={<FAQ />} />
           <Route path="contact" element={<Contact />} />

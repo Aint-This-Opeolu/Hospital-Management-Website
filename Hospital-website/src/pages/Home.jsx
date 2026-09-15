@@ -3,7 +3,7 @@ import { departments } from '../data/department';
 import { doctors } from '../data/doctors';
 import DoctorCard from '../components/DoctorCard';
 import { motion } from 'framer-motion';
-import { Shield, Users, Zap, Heart, ArrowRight, Quote, Phone } from 'lucide-react';
+import { Shield, Users, Zap, Heart, ArrowRight, Quote } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const features = [
@@ -34,38 +34,6 @@ export default function Home() {
     <div className="space-y-28 pb-24">
 
       <Hero />
-
-      {/* Emergency CTA */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <motion.div
-          initial={{ opacity: 0, y: 40 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.5 }}
-          className="bg-red-600 rounded-[2rem] p-8 md:p-12 text-white flex flex-col md:flex-row items-center justify-between gap-8 shadow-2xl shadow-red-600/30"
-        >
-          <div>
-            <h2 className="text-3xl md:text-4xl font-bold mb-4 flex items-center gap-4">
-              <span className="relative flex h-5 w-5 md:h-6 md:w-6">
-                <span className="animate-ping absolute h-full w-full rounded-full bg-white opacity-40"></span>
-                <span className="relative rounded-full h-5 w-5 md:h-6 md:w-6 bg-white"></span>
-              </span>
-              24/7 Emergency Service Available
-            </h2>
-            <p className="text-red-100 text-lg max-w-2xl">
-              Rapid response teams and life support ambulances ready for critical situations.
-            </p>
-          </div>
-
-          <a
-            href="tel:+2347060671574"
-            className="bg-white text-red-600 px-8 py-4 rounded-2xl font-bold text-lg flex items-center gap-3 hover:bg-red-50 hover:scale-105 transition-all shadow-lg"
-          >
-            <Phone className="h-5 w-5" />
-            Call Now
-          </a>
-        </motion.div>
-      </section>
 
       {/* Features */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

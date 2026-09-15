@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { departments } from '../data/departments';
 import { doctors } from '../data/doctors';
 import { CheckCircle2, Send } from 'lucide-react';
+import { api, getStoredUser } from '../utils/api';
 
 export default function AppointmentForm() {
   const [isSubmitted, setIsSubmitted] = React.useState(false);
@@ -28,7 +29,11 @@ export default function AppointmentForm() {
     e.preventDefault();
 
     // send to backend
-    const user = (()=>{ try { return JSON.parse(localStorage.getItem('hms_user')); } catch { return null; } })();
+    const user = getStoredUser();
+    if (!user || user.role !== 'patient') {
+      alert('Please sign in with a patient account before requesting an appointment.');
+      return;
+    }
     const payload = {
       patient_id: user && user.role === 'patient' ? user.id : null,
       patient_name: formData.name,
@@ -40,8 +45,7 @@ export default function AppointmentForm() {
       reason: formData.message
     };
 
-    fetch('/api/appointments', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(payload) })
-      .then(r => r.json())
+    api('/api/appointments', { method: 'POST', body: JSON.stringify(payload) })
       .then(() => {
         setIsSubmitted(true);
         setTimeout(() => {
@@ -50,10 +54,7 @@ export default function AppointmentForm() {
           setFormData({ name: '', phone: '', email: '', department: '', doctor: '', date: '', time: '', message: '' });
         }, 2000);
       })
-      .catch(err => {
-        console.error(err);
-        alert('Failed to submit appointment');
-      });
+      .catch(err => alert(err.message || 'Failed to submit appointment'));
   };
 
   return (

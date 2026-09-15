@@ -1,97 +1,49 @@
 const express = require('express');
 const router = express.Router();
-const { db } = require('../db.cjs');
-const { verifyToken } = require('../auth.cjs');
+const { prisma } = require('../db.cjs');
+const { authMiddleware } = require('../auth.cjs');
+router.use(authMiddleware(['patient', 'doctor', 'nurse', 'reception', 'admin']));
 
-function requireAuth(req, res, next) {
-  const token = req.headers.authorization?.split('Bearer ')[1];
-  const decoded = verifyToken(token);
-  if (!decoded) return res.status(401).json({ error: 'Unauthorized' });
-  req.user = decoded;
-  next();
-}
+const shape = (appointment) => ({ ...appointment, booking_timestamp: appointment.bookingTimestamp?.toISOString(), appointment_date: appointment.appointmentDate, appointment_time: appointment.appointmentTime, patient_id: appointment.patientId, doctor_id: appointment.doctorId, patient_name: appointment.patientName, doctor_name: appointment.doctorName, consultation_notes: appointment.consultationNotes });
 
-router.use(requireAuth);
-
-router.post('/', (req, res) => {
-  const { patient_name, doctor_id, doctor_name, appointment_date, appointment_time, reason } = req.body;
-  const booking_timestamp = new Date().toISOString();
-  const status = 'pending';
-  const user = req.user;
-
-  if (!patient_name || !appointment_date || !appointment_time) {
-    return res.status(400).json({ error: 'patient_name, appointment_date and appointment_time are required' });
-  }
-
-  let doctorNameFinal = doctor_name || null;
-  if (doctor_id && !doctorNameFinal) {
-    const d = db.prepare('SELECT name FROM doctors WHERE id = ?').get(doctor_id);
-    if (d) doctorNameFinal = d.name;
-  }
-
-  const patientId = user.role === 'patient' ? user.id : null;
-  const stmt = db.prepare(`INSERT INTO appointments (patient_id, patient_name, doctor_id, doctor_name, appointment_date, appointment_time, booking_timestamp, status, reason) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`);
-  const info = stmt.run(patientId, patient_name, doctor_id || null, doctorNameFinal, appointment_date, appointment_time, booking_timestamp, status, reason || '');
-  const appointment = db.prepare('SELECT * FROM appointments WHERE id = ?').get(info.lastInsertRowid);
-  res.json({ appointment });
+router.post('/', async (req, res, next) => {
+  try {
+    const { patient_name, doctor_id, doctor_name, appointment_date, appointment_time, reason } = req.body;
+    if (!patient_name || !appointment_date || !appointment_time) return res.status(400).json({ error: 'patient_name, appointment_date and appointment_time are required' });
+    if (!['patient', 'reception', 'admin'].includes(req.user.role)) return res.status(403).json({ error: 'Only patients or reception staff can schedule appointments' });
+    const doctor = doctor_id ? await prisma.doctor.findUnique({ where: { id: doctor_id } }) : null;
+    const existing = doctor_id && await prisma.appointment.findFirst({ where: { doctorId: doctor_id, appointmentDate: appointment_date, appointmentTime: appointment_time, status: { notIn: ['cancelled', 'declined'] } } });
+    if (existing) return res.status(409).json({ error: 'The doctor is already booked for that time' });
+    const appointment = await prisma.appointment.create({ data: { patientId: req.user.role === 'patient' ? req.user.id : (req.body.patient_id || null), patientName: patient_name, doctorId: doctor_id || null, doctorName: doctor_name || doctor?.name || null, appointmentDate: appointment_date, appointmentTime: appointment_time, status: 'pending', reason: reason || '', createdBy: req.user.user_id || req.user.id } });
+    res.status(201).json({ appointment: shape(appointment) });
+  } catch (error) { next(error); }
 });
 
-router.get('/', (req, res) => {
-  const { doctor_id, patient_id, status, search } = req.query;
-  const user = req.user;
-  let q = 'SELECT * FROM appointments';
-  const clauses = [];
-  const params = [];
-
-  if (user.role === 'doctor') {
-    clauses.push('doctor_id = ?');
-    params.push(user.doctor_id || user.id);
-  } else if (user.role === 'patient') {
-    clauses.push('patient_id = ?');
-    params.push(user.id);
-  }
-
-  if (doctor_id) { clauses.push('doctor_id = ?'); params.push(doctor_id); }
-  if (patient_id) { clauses.push('patient_id = ?'); params.push(patient_id); }
-  if (status) { clauses.push('status = ?'); params.push(status); }
-  if (search) {
-    clauses.push('(patient_name LIKE ? OR doctor_name LIKE ? OR reason LIKE ?)');
-    params.push(`%${search}%`, `%${search}%`, `%${search}%`);
-  }
-
-  if (clauses.length) q += ' WHERE ' + clauses.join(' AND ');
-  q += ' ORDER BY booking_timestamp DESC';
-  const stmt = db.prepare(q);
-  const rows = stmt.all(...params);
-  res.json({ appointments: rows });
+router.get('/', async (req, res, next) => {
+  try {
+    const where = {};
+    if (req.user.role === 'doctor') where.doctorId = req.user.doctor_id || String(req.user.id);
+    if (req.user.role === 'patient') where.patientId = req.user.id;
+    if (req.query.doctor_id) where.doctorId = req.query.doctor_id;
+    if (req.query.patient_id) where.patientId = Number(req.query.patient_id);
+    if (req.query.status) where.status = req.query.status;
+    if (req.query.search) where.OR = [{ patientName: { contains: req.query.search, mode: 'insensitive' } }, { doctorName: { contains: req.query.search, mode: 'insensitive' } }, { reason: { contains: req.query.search, mode: 'insensitive' } }];
+    const appointments = await prisma.appointment.findMany({ where, orderBy: { bookingTimestamp: 'desc' } });
+    res.json({ appointments: appointments.map(shape) });
+  } catch (error) { next(error); }
 });
 
-router.patch('/:id', (req, res) => {
-  const id = req.params.id;
-  const { status, consultation_notes, appointment_date, appointment_time } = req.body;
-  const user = req.user;
-  const existing = db.prepare('SELECT * FROM appointments WHERE id = ?').get(id);
-  if (!existing) return res.status(404).json({ error: 'appointment not found' });
-
-  if (user.role === 'doctor' && existing.doctor_id !== (user.doctor_id || user.id)) {
-    return res.status(403).json({ error: 'Forbidden' });
-  }
-  if (user.role === 'patient' && existing.patient_id !== user.id) {
-    return res.status(403).json({ error: 'Forbidden' });
-  }
-
-  const updates = [];
-  const params = [];
-  if (status) { updates.push('status = ?'); params.push(status); }
-  if (consultation_notes !== undefined) { updates.push('consultation_notes = ?'); params.push(consultation_notes); }
-  if (appointment_date) { updates.push('appointment_date = ?'); params.push(appointment_date); }
-  if (appointment_time) { updates.push('appointment_time = ?'); params.push(appointment_time); }
-  if (!updates.length) return res.status(400).json({ error: 'no updates provided' });
-  params.push(id);
-  const q = `UPDATE appointments SET ${updates.join(', ')} WHERE id = ?`;
-  db.prepare(q).run(...params);
-  const appt = db.prepare('SELECT * FROM appointments WHERE id = ?').get(id);
-  res.json({ appointment: appt });
+router.patch('/:id', async (req, res, next) => {
+  try {
+    const id = Number(req.params.id);
+    const existing = await prisma.appointment.findUnique({ where: { id } });
+    if (!existing) return res.status(404).json({ error: 'appointment not found' });
+    if (req.user.role === 'doctor' && existing.doctorId !== (req.user.doctor_id || String(req.user.id))) return res.status(403).json({ error: 'Forbidden' });
+    if (req.user.role === 'patient' && existing.patientId !== req.user.id) return res.status(403).json({ error: 'Forbidden' });
+    const data = {};
+    for (const [input, output] of [['status', 'status'], ['consultation_notes', 'consultationNotes'], ['appointment_date', 'appointmentDate'], ['appointment_time', 'appointmentTime']]) if (req.body[input] !== undefined) data[output] = req.body[input];
+    if (!Object.keys(data).length) return res.status(400).json({ error: 'no updates provided' });
+    res.json({ appointment: shape(await prisma.appointment.update({ where: { id }, data })) });
+  } catch (error) { next(error); }
 });
-
 module.exports = router;
