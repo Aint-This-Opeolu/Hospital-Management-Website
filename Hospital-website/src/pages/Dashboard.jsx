@@ -4,6 +4,7 @@ import { api, getStoredUser } from '../utils/api';
 import AdminDashboardPage from './AdminDashboard';
 import ReceptionDashboardPage from './ReceptionDashboard';
 import PatientDashboardPage from './PatientDashboard';
+import NurseDashboardPage from './NurseDashboard';
 
 const card = 'bg-white border border-slate-100 rounded-2xl p-5 shadow-sm';
 
@@ -118,7 +119,7 @@ function Header({ title, subtitle }) {
 export default function Dashboard() {
   const user = getStoredUser();
   if (!user) return <div className="max-w-3xl mx-auto p-8"><p>Please sign in to continue.</p><Link className="text-blue-600" to="/login">Go to login</Link></div>;
-  const dashboards = { admin: AdminDashboardPage, doctor: DoctorWorkspace, nurse: NurseDashboard, reception: ReceptionDashboardPage, patient: PatientDashboardPage };
+  const dashboards = { admin: AdminDashboardPage, doctor: DoctorWorkspace, nurse: NurseDashboardPage, reception: ReceptionDashboardPage, patient: PatientDashboardPage };
   const DashboardView = dashboards[user.role] || PatientDashboard;
   return <div className="max-w-7xl mx-auto p-6 md:p-10"><DashboardView user={user} /></div>;
 }
