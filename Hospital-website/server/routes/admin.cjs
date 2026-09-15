@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { prisma } = require('../db.cjs');
 const { hashPassword } = require('../auth.cjs');
+const { recordActivity } = require('../activity.cjs');
 
 router.get('/stats', async (req, res, next) => {
   try {
@@ -20,6 +21,7 @@ router.post('/doctors', async (req, res, next) => { try { const { id, name, spec
 router.delete('/doctors/:id', async (req, res, next) => { try { await prisma.doctor.delete({ where: { id: req.params.id } }); res.json({ ok: true }); } catch (error) { next(error); } });
 router.get('/patients', async (req, res, next) => { try { res.json({ patients: await prisma.patient.findMany({ orderBy: { registrationDate: 'desc' } }) }); } catch (error) { next(error); } });
 router.get('/users', async (req, res, next) => { try { const users = await prisma.user.findMany({ select: { id: true, name: true, email: true, role: true, doctorId: true, phone: true, dateCreated: true, lastLogin: true, active: true }, orderBy: { dateCreated: 'desc' } }); res.json({ users }); } catch (error) { next(error); } });
+router.get('/activity-logs', async (req, res, next) => { try { const logs = await prisma.activityLog.findMany({ orderBy: { createdAt: 'desc' }, take: 100 }); res.json({ logs }); } catch (error) { next(error); } });
 
 router.post('/users', async (req, res, next) => {
   try {
@@ -27,11 +29,12 @@ router.post('/users', async (req, res, next) => {
     if (!name || !email || !password || !['admin', 'doctor', 'nurse', 'reception'].includes(role)) return res.status(400).json({ error: 'name, email, password and valid staff role are required' });
     const user = await prisma.user.create({ data: { name, email: email.trim().toLowerCase(), passwordHash: hashPassword(password), role, doctorId: doctor_id || null, phone } });
     if (role === 'doctor') await prisma.doctor.upsert({ where: { id: doctor_id || `staff-${user.id}` }, update: { name, email: user.email }, create: { id: doctor_id || `staff-${user.id}`, name, email: user.email, specialization: 'General Medicine' } });
+    await recordActivity({ user: req.user, action: 'CREATE', entity: 'User', entityId: user.id, details: `Created ${role} account for ${name}` });
     res.status(201).json({ user });
   } catch (error) { res.status(409).json({ error: 'A user with that email already exists' }); }
 });
 
-router.patch('/users/:id', async (req, res, next) => { try { if (typeof req.body.active !== 'boolean') return res.status(400).json({ error: 'active must be boolean' }); await prisma.user.update({ where: { id: Number(req.params.id) }, data: { active: req.body.active } }); res.json({ ok: true }); } catch (error) { next(error); } });
+router.patch('/users/:id', async (req, res, next) => { try { if (typeof req.body.active !== 'boolean') return res.status(400).json({ error: 'active must be boolean' }); await prisma.user.update({ where: { id: Number(req.params.id) }, data: { active: req.body.active } }); await recordActivity({ user: req.user, action: 'UPDATE', entity: 'User', entityId: req.params.id, details: `Account ${req.body.active ? 'activated' : 'disabled'}` }); res.json({ ok: true }); } catch (error) { next(error); } });
 router.get('/reports', async (req, res, next) => {
   try {
     const from = req.query.from || '2000-01-01'; const to = req.query.to || '2999-12-31';

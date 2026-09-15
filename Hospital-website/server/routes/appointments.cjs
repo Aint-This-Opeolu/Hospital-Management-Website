@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { prisma } = require('../db.cjs');
 const { authMiddleware } = require('../auth.cjs');
+const { recordActivity } = require('../activity.cjs');
 router.use(authMiddleware(['patient', 'doctor', 'nurse', 'reception', 'admin']));
 
 const shape = (appointment) => ({ ...appointment, booking_timestamp: appointment.bookingTimestamp?.toISOString(), appointment_date: appointment.appointmentDate, appointment_time: appointment.appointmentTime, patient_id: appointment.patientId, doctor_id: appointment.doctorId, patient_name: appointment.patientName, doctor_name: appointment.doctorName, consultation_notes: appointment.consultationNotes });
@@ -15,6 +16,7 @@ router.post('/', async (req, res, next) => {
     const existing = doctor_id && await prisma.appointment.findFirst({ where: { doctorId: doctor_id, appointmentDate: appointment_date, appointmentTime: appointment_time, status: { notIn: ['cancelled', 'declined'] } } });
     if (existing) return res.status(409).json({ error: 'The doctor is already booked for that time' });
     const appointment = await prisma.appointment.create({ data: { patientId: req.user.role === 'patient' ? req.user.id : (req.body.patient_id || null), patientName: patient_name, doctorId: doctor_id || null, doctorName: doctor_name || doctor?.name || null, appointmentDate: appointment_date, appointmentTime: appointment_time, status: 'pending', reason: reason || '', createdBy: req.user.user_id || req.user.id } });
+    await recordActivity({ user: req.user, action: 'CREATE', entity: 'Appointment', entityId: appointment.id, details: `Appointment requested for ${patient_name}` });
     res.status(201).json({ appointment: shape(appointment) });
   } catch (error) { next(error); }
 });
@@ -43,7 +45,9 @@ router.patch('/:id', async (req, res, next) => {
     const data = {};
     for (const [input, output] of [['status', 'status'], ['consultation_notes', 'consultationNotes'], ['appointment_date', 'appointmentDate'], ['appointment_time', 'appointmentTime']]) if (req.body[input] !== undefined) data[output] = req.body[input];
     if (!Object.keys(data).length) return res.status(400).json({ error: 'no updates provided' });
-    res.json({ appointment: shape(await prisma.appointment.update({ where: { id }, data })) });
+    const appointment = await prisma.appointment.update({ where: { id }, data });
+    await recordActivity({ user: req.user, action: 'UPDATE', entity: 'Appointment', entityId: id, details: `Appointment updated: ${Object.keys(data).join(', ')}` });
+    res.json({ appointment: shape(appointment) });
   } catch (error) { next(error); }
 });
 module.exports = router;

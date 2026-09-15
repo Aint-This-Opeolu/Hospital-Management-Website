@@ -131,3 +131,19 @@ model Observation {
   @@index([patientId, recordedAt])
   @@map("observations")
 }
+
+model ActivityLog {
+  id        Int      @id @default(autoincrement())
+  actorId   Int?     @map("actor_id")
+  actorName String?  @map("actor_name")
+  actorRole String?  @map("actor_role")
+  action    String
+  entity    String
+  entityId  String?  @map("entity_id")
+  details   String?
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([createdAt])
+  @@index([actorRole, action])
+  @@map("activity_logs")
+}
